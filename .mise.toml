@@ -1,0 +1,37 @@
+[tools]
+python = "3.12"
+
+[env]
+XLA_PYTHON_CLIENT_PREALLOCATE = "false"
+# XLA_PYTHON_CLIENT_MEM_FRACTION = "0.6"
+
+[tasks.setup]
+description = "CPU development (install dev + runtime + cpu groups)"
+run = "uv sync --group dev --group runtime --group cpu"
+
+[tasks.setup-gpu]
+description = "GPU development (install dev + runtime + gpu: jax[cuda12])"
+run = "uv sync --group dev --group runtime --group gpu"
+
+[tasks.lint]
+run = [
+  "uv run ruff format .",
+  "uv run ruff check --fix .",
+]
+
+[tasks.typecheck]
+run = "uv run mypy qax"
+
+[tasks.test]
+run = "uv run pytest -q"
+
+[tasks.test-gpu]
+env = { NCCL_DEBUG = "WARN" }
+run = "uv run pytest -m 'gpu' -q"
+
+[tasks.hooks]
+description = "Set up pre-commit hooks"
+run = [
+  "uv run pre-commit install",
+  "uv run pre-commit autoupdate",
+]

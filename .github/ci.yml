@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpu:
+    name: CPU (lint/type/test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync deps (dev + runtime + CPU)
+        run: uv sync --group dev --group runtime --group cpu
+
+      - name: Lint (Ruff)
+        run: uv run ruff check .
+
+      - name: Format check (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Type check (mypy)
+        run: uv run mypy qax
+
+      - name: Tests (pytest)
+        run: uv run pytest -q
+
+  gpu:
+    name: GPU (self-hosted)
+    if: always()
+    runs-on: [self-hosted, gpu, a100]
+    env:
+      LD_LIBRARY_PATH: ""
+      XLA_PYTHON_CLIENT_PREALLOCATE: "false"
+      NCCL_DEBUG: "WARN"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync deps (dev + runtime + GPU/CUDA12)
+        run: uv sync --group dev --group runtime --group gpu
+
+      - name: Sanity check (JAX devices)
+        run: uv run python - << 'PY'
+import jax
+print("devices:", jax.devices())
+print("local_device_count:", jax.local_device_count())
+PY
+
+      - name: GPU tests
+        run: uv run pytest -m "gpu" -q

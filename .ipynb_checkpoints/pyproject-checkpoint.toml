@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qax"
+version = "0.1.0"
+description = "Large-scale quantum simulation library on JAX (multi-GPU)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Ryo Maekura", email = "ryomaekura@g.ecc.u-tokyo.ac.jp" }]
+dependencies = []
+
+[project.optional-dependencies]
+cpu = [
+  "jax",
+  "flax", "optax", "diffrax", "orbax-checkpoint",
+  "jaxtyping", "chex", "matplotlib", "sympy", "numpy",
+]
+gpu = [
+  "jax[cuda12]",
+  "flax", "optax", "diffrax", "orbax-checkpoint",
+  "jaxtyping", "chex", "matplotlib", "sympy", "numpy",
+]
+
+[dependency-groups]
+runtime = [
+  "flax", "optax", "diffrax", "orbax-checkpoint",
+  "jaxtyping", "chex", "matplotlib", "sympy", "numpy",
+]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "pre-commit", "scalene"]
+cpu = ["jax"]
+gpu = ["jax[cuda12]"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["qax"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W", "C90", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["qax"]
+
+[tool.ruff.format]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_redundant_casts = true
+no_implicit_optional = true
+# plugins = ["jaxtyping.mypy"]
+
+[tool.pytest.ini_options]
+addopts = ["-ra", "--import-mode=importlib"]
+testpaths = ["tests"]
